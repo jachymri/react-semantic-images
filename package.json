@@ -1,0 +1,68 @@
+{
+  "name": "react-semantic-images",
+  "version": "0.1.0",
+  "description": "Place images on a website using natural-language semantic descriptions. A local CLIP model maps descriptions to images during a pre-compile step.",
+  "keywords": [
+    "react",
+    "nextjs",
+    "vite",
+    "remix",
+    "images",
+    "semantic",
+    "clip",
+    "ai",
+    "embeddings",
+    "transformers"
+  ],
+  "homepage": "https://github.com/jachym-richtrmoc/react-semantic-images",
+  "bugs": {
+    "url": "https://github.com/jachym-richtrmoc/react-semantic-images/issues"
+  },
+  "author": "Jachym Richtrmoc",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jachym-richtrmoc/react-semantic-images.git"
+  },
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "match-images": "./dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc && chmod +x dist/cli/index.js",
+    "ci": "npm run build",
+    "dev": "tsc --watch",
+    "prepublishOnly": "npm run build"
+  },
+  "peerDependencies": {
+    "react": ">=17"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.25.0",
+    "@babel/traverse": "^7.25.0",
+    "@babel/types": "^7.25.0",
+    "@huggingface/transformers": "^3.0.0",
+    "fast-glob": "^3.3.2"
+  },
+  "devDependencies": {
+    "@types/babel__traverse": "^7.20.6",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "react": "^18.0.0",
+    "typescript": "^5.4.0"
+  }
+}
