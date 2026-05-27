@@ -40,7 +40,7 @@
     }
   },
   "bin": {
-    "match-images": "./dist/cli/index.js"
+    "match-images": "dist/cli/index.js"
   },
   "scripts": {
     "build": "tsc && chmod +x dist/cli/index.js",
