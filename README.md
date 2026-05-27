@@ -70,6 +70,62 @@ import { SemanticImage } from "react-semantic-images";
 <SemanticImage as={Image} description="cozy coffee shop interior" width={800} height={600} />;
 ```
 
+### Custom wrapper components
+
+You almost certainly don't want to sprinkle `as={Image}` and shared defaults all over every
+page. The recommended pattern is to wrap `SemanticImage` once in your own component and use
+that wrapper everywhere:
+
+```tsx
+// components/SemanticImg.tsx
+import NextImage from "next/image";
+import { SemanticImage, type SemanticImageProps } from "react-semantic-images";
+
+type SemanticImgProps = Omit<SemanticImageProps, "as"> & { className?: string };
+
+export function SemanticImg({ description, lock, ...rest }: SemanticImgProps) {
+  return (
+    <SemanticImage
+      as={NextImage as React.ElementType}
+      description={description}
+      lock={lock}
+      {...(rest as React.ImgHTMLAttributes<HTMLImageElement>)}
+    />
+  );
+}
+```
+
+Then use `<SemanticImg>` across every page — no imports of `SemanticImage` or `next/image`
+needed anywhere else:
+
+```tsx
+// app/page.tsx
+import { SemanticImg } from "@/components/SemanticImg";
+
+export default function HomePage() {
+  return (
+    <main>
+      <SemanticImg description="hero shot of a mountain at sunrise" width={1200} height={600} />
+      <SemanticImg description="team photo in open-plan office" lock width={800} height={400} />
+    </main>
+  );
+}
+```
+
+The CLI automatically discovers wrapper components — you never have to register them anywhere.
+It works by detecting that `SemanticImg` renders `<SemanticImage description={description} …>`,
+marking it as a semantic image component, and then scanning every file for literal `description`
+props on `<SemanticImg>` exactly as it would for `<SemanticImage>`.
+
+This works transitively: if you wrap your wrapper (e.g. `HeroImg` wraps `SemanticImg`), the
+CLI will discover the full chain and correctly collect descriptions from `<HeroImg>` usages too.
+
+The `lock` prop behaves identically on any wrapper — place it at the call site:
+
+```tsx
+<SemanticImg description="company founder portrait" lock />
+```
+
 ### Runtime behavior
 
 1. The component fetches `/semantic-manifest.json` once per page load (cached at the module level).
@@ -98,7 +154,10 @@ npx match-images
 
 ### Pipeline
 
-1. **Scan source code** for `<SemanticImage description="…" lock={…} />` using Babel's JSX parser.
+1. **Scan source code** using Babel's JSX parser. First discovers any wrapper components that
+   forward `description` through to `<SemanticImage>` (or to another wrapper), then collects
+   every literal `description` prop from `<SemanticImage>` and all discovered wrappers alike.
+   Wrapper discovery is automatic and transitive — no registration required.
 2. **Read the existing manifest** so that any locked description with an existing mapping is preserved.
 3. **Embed images** with `Xenova/clip-vit-base-patch16` (quantized ONNX). MD5-hashed cache means
    unchanged images skip the model on subsequent runs.
