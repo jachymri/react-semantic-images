@@ -1,6 +1,6 @@
 {
   "name": "react-semantic-images",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Place images on a website using natural-language semantic descriptions. A local CLIP model maps descriptions to images during a pre-compile step.",
   "keywords": [
     "react",
