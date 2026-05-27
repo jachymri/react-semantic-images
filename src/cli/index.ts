@@ -103,7 +103,9 @@ async function main(): Promise<void> {
   }
 
   // Load existing manifest for lock preservation.
-  const existing = await readJsonSafe<Record<string, string>>(outFile, {});
+  const existing = await readJsonSafe<
+    Record<string, string | { image: string; score?: number }>
+  >(outFile, {});
 
   // Discover image pool.
   let imageFiles: string[];
@@ -128,7 +130,10 @@ async function main(): Promise<void> {
 
   // Partition: locked descriptions whose previous mapping exists in the
   // manifest AND whose target file still exists in the pool.
-  const lockedAssignments: Record<string, string> = {};
+  const lockedAssignments: Record<
+    string,
+    { image: string; score?: number } | string
+  > = {};
   const lockedImagePaths = new Set<string>();
   const remainingDescriptions = [] as { description: string }[];
 
@@ -141,9 +146,14 @@ async function main(): Promise<void> {
 
   for (const u of usages) {
     const previous = existing[u.description];
-    if (u.lock && previous && imagePathByPublic.has(previous)) {
-      lockedAssignments[u.description] = previous;
-      lockedImagePaths.add(imagePathByPublic.get(previous)!);
+    if (u.lock && previous) {
+      const prevPath = typeof previous === "string" ? previous : previous.image;
+      if (imagePathByPublic.has(prevPath)) {
+        lockedAssignments[u.description] = previous;
+        lockedImagePaths.add(imagePathByPublic.get(prevPath)!);
+      } else {
+        remainingDescriptions.push({ description: u.description });
+      }
     } else {
       remainingDescriptions.push({ description: u.description });
     }
@@ -196,9 +206,15 @@ async function main(): Promise<void> {
     for (const d of unassigned) console.warn(`     • "${d}"`);
   }
 
-  const manifest: Record<string, string> = { ...lockedAssignments };
+  const manifest: Record<
+    string,
+    { image: string; score?: number } | string
+  > = { ...lockedAssignments };
   for (const a of assignments) {
-    manifest[a.description] = a.image.publicPath;
+    manifest[a.description] = {
+      image: a.image.publicPath,
+      score: Number(a.score.toFixed(4)),
+    };
   }
 
   await fs.mkdir(path.dirname(outFile), { recursive: true });
@@ -219,7 +235,14 @@ async function main(): Promise<void> {
   if (Object.keys(lockedAssignments).length > 0) {
     console.log("\nLocked:");
     for (const [d, p] of Object.entries(lockedAssignments)) {
-      console.log(`  🔒       "${d}" → ${p}`);
+      const displayPath = typeof p === "string" ? p : p.image;
+      const displayScore =
+        typeof p === "string"
+          ? ""
+          : p.score !== undefined
+          ? ` (score: ${p.score.toFixed(3)})`
+          : "";
+      console.log(`  🔒       "${d}" → ${displayPath}${displayScore}`);
     }
   }
 }

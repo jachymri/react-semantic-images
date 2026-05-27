@@ -2,7 +2,14 @@
 
 import * as React from "react";
 
-export type SemanticManifest = Record<string, string>;
+export type SemanticManifest = Record<
+  string,
+  | string
+  | {
+      image: string;
+      score?: number;
+    }
+>;
 
 export interface SemanticImageProps
   extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src"> {
@@ -144,8 +151,13 @@ export const SemanticImage: React.FC<SemanticImageProps> = ({
 
   // If manifest is provided inline, we can render directly on SSR.
   // Otherwise, wait until mounted on client to fetch and display to avoid hydration mismatch.
+  const entry = (inlineManifest || mounted) && manifest ? manifest[description] : undefined;
   const resolvedSrc =
-    ((inlineManifest || mounted) && manifest && manifest[description]) ||
+    (entry
+      ? typeof entry === "string"
+        ? entry
+        : entry.image
+      : undefined) ||
     fallbackSrc ||
     PLACEHOLDER_SVG;
 
