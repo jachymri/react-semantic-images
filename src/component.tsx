@@ -15,34 +15,51 @@ export interface SemanticImageProps
   extends Omit<React.ImgHTMLAttributes<HTMLImageElement>, "src"> {
   /** Natural-language description of what the image should depict. */
   description: string;
-  /** If true, the CLI will never reassign a different asset to this description on future runs. */
-  lock?: boolean;
   /** Optional pre-loaded manifest to enable direct SSR and zero-flash loading. */
   manifest?: SemanticManifest;
-  /**
-   * Optional custom image component (e.g. `next/image`). It must accept `src` and `alt` props.
-   * Any extra props passed to `<SemanticImage />` are forwarded to it.
-   */
+  /** Custom image component (e.g. Next.js `next/image`). Must accept `src` and `alt` props. */
   as?: React.ElementType;
-  /** Override the default manifest URL (`/semantic-manifest.json`). */
+  /** Override the default manifest URL. Defaults to `/semantic-manifest.json`. */
   manifestUrl?: string;
-  /** Optional fallback src to render when no match is found. Defaults to an inline SVG placeholder. */
+  /** Fallback image src when no match is found. Defaults to an inline SVG placeholder. */
   fallbackSrc?: string;
 }
 
 const DEFAULT_MANIFEST_URL = "/semantic-manifest.json";
 
-// Inline SVG placeholder rendered as data URL when no match is found.
-const PLACEHOLDER_SVG =
-  "data:image/svg+xml;utf8," +
-  encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">` +
-      `<rect width="400" height="300" fill="#e5e7eb"/>` +
-      `<g fill="#9ca3af" font-family="system-ui,sans-serif" font-size="16" text-anchor="middle">` +
-      `<text x="200" y="150">semantic image</text>` +
-      `<text x="200" y="172" font-size="12">no match</text>` +
-      `</g></svg>`
+// Inline SVG placeholder showing the description text, rendered when no match is found.
+function makePlaceholder(description: string): string {
+  // Word-wrap the description at ~38 chars per line for the 400px viewBox.
+  const words = description.split(" ");
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const candidate = current ? `${current} ${word}` : word;
+    if (candidate.length > 38 && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = candidate;
+    }
+  }
+  if (current) lines.push(current);
+
+  const lineHeight = 18;
+  const startY = 150 - ((lines.length - 1) * lineHeight) / 2;
+  const textNodes = lines
+    .map((l, i) => `<text x="200" y="${startY + i * lineHeight}">${l}</text>`)
+    .join("");
+
+  return (
+    "data:image/svg+xml;utf8," +
+    encodeURIComponent(
+      `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">` +
+        `<rect width="400" height="300" fill="#e5e7eb"/>` +
+        `<g fill="#9ca3af" font-family="system-ui,sans-serif" font-size="13" text-anchor="middle">${textNodes}</g>` +
+      `</svg>`
+    )
   );
+}
 
 // Module-level cache so the manifest is fetched once per page load.
 type ManifestState =
@@ -56,6 +73,7 @@ const manifestState: { current: ManifestState } = { current: { status: "idle" } 
 declare global {
   interface Window {
     __SEMANTIC_MANIFEST__?: SemanticManifest;
+    __SEMANTIC_DESCRIPTIONS__?: Set<string>;
   }
 }
 
@@ -116,7 +134,6 @@ function getCachedManifest(): SemanticManifest | undefined {
 
 export const SemanticImage: React.FC<SemanticImageProps> = ({
   description,
-  lock: _lock, // consumed only by the CLI; intentionally unused at runtime
   as,
   manifest: inlineManifest,
   manifestUrl = DEFAULT_MANIFEST_URL,
@@ -133,6 +150,14 @@ export const SemanticImage: React.FC<SemanticImageProps> = ({
   React.useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Register this description into the global collector so that
+  // `npx collect-descriptions` can harvest it via headless browser.
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!window.__SEMANTIC_DESCRIPTIONS__) window.__SEMANTIC_DESCRIPTIONS__ = new Set();
+    window.__SEMANTIC_DESCRIPTIONS__.add(description);
+  }, [description]);
 
   React.useEffect(() => {
     if (inlineManifest) {
@@ -159,7 +184,7 @@ export const SemanticImage: React.FC<SemanticImageProps> = ({
         : entry.image
       : undefined) ||
     fallbackSrc ||
-    PLACEHOLDER_SVG;
+    makePlaceholder(description);
 
   const Component: React.ElementType = as || "img";
   const resolvedAlt = alt ?? description;

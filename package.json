@@ -1,18 +1,17 @@
 {
   "name": "react-semantic-images",
-  "version": "0.1.2",
-  "description": "Place images on a website using natural-language semantic descriptions. A local CLIP model maps descriptions to images during a pre-compile step.",
+  "version": "0.2.0",
+  "description": "Drop <SemanticImage description=\"...\"> into your React app. Run two commands. Get the best-matching image from your pool assigned to every slot — locally, no API keys.",
   "keywords": [
     "react",
     "nextjs",
     "vite",
-    "remix",
     "images",
     "semantic",
     "clip",
     "ai",
     "embeddings",
-    "transformers"
+    "image-matching"
   ],
   "homepage": "https://github.com/jachym-richtrmoc/react-semantic-images",
   "bugs": {
@@ -40,11 +39,11 @@
     }
   },
   "bin": {
+    "collect-descriptions": "dist/cli/collect.js",
     "match-images": "dist/cli/index.js"
   },
   "scripts": {
-    "build": "tsc && chmod +x dist/cli/index.js",
-    "ci": "npm run build",
+    "build": "tsc && chmod +x dist/cli/index.js dist/cli/collect.js",
     "dev": "tsc --watch",
     "prepublishOnly": "npm run build"
   },
@@ -52,17 +51,18 @@
     "react": ">=17"
   },
   "dependencies": {
-    "@babel/parser": "^7.25.0",
-    "@babel/traverse": "^7.25.0",
-    "@babel/types": "^7.25.0",
     "@huggingface/transformers": "^3.0.0",
     "fast-glob": "^3.3.2"
   },
+  "optionalDependencies": {
+    "sharp": "^0.34.0",
+    "playwright": "^1.40.0"
+  },
   "devDependencies": {
-    "@types/babel__traverse": "^7.20.6",
     "@types/node": "^20.0.0",
     "@types/react": "^18.0.0",
-    "react": "^18.0.0",
+    "playwright": "^1.60.0",
+    "sharp": "^0.34.5",
     "typescript": "^5.4.0"
   }
 }
