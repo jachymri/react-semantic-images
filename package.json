@@ -1,6 +1,6 @@
 {
   "name": "react-semantic-images",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Drop <SemanticImage description=\"...\"> into your React app. Run two commands. Get the best-matching image from your pool assigned to every slot — locally, no API keys.",
   "keywords": [
     "react",
@@ -13,14 +13,14 @@
     "embeddings",
     "image-matching"
   ],
-  "homepage": "https://github.com/jachym-richtrmoc/react-semantic-images",
+  "homepage": "https://github.com/jachymri/react-semantic-images",
   "bugs": {
-    "url": "https://github.com/jachym-richtrmoc/react-semantic-images/issues"
+    "url": "https://github.com/jachymri/react-semantic-images/issues"
   },
   "author": "Jachym Richtrmoc",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jachym-richtrmoc/react-semantic-images.git"
+    "url": "git+https://github.com/jachymri/react-semantic-images.git"
   },
   "license": "MIT",
   "files": [
