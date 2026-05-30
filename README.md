@@ -181,6 +181,27 @@ Subsequent runs are fast — only new or changed images are re-embedded.
 
 ---
 
+## Git integration
+
+After `match-images` runs, it automatically updates your `.gitignore` — but only if the project is inside a git repository. If no `.git` is found, this step is skipped entirely.
+
+The block it writes looks like this:
+
+```gitignore
+# --- react-semantic-images ---
+# react-semantic-images: ignore unmatched pool images
+public/semantic-pool/*
+!public/semantic-pool/city.jpg
+!public/semantic-pool/forest.jpg
+# --- end react-semantic-images ---
+```
+
+- Every image in the pool is ignored by default
+- Only matched images get a `!` exception so git tracks them
+- Re-running `match-images` replaces the block in place — it never duplicates
+
+---
+
 ## Rematching
 
 **Add a new image to the pool and rematch everything unmatched:**

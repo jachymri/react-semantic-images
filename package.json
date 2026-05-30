@@ -1,6 +1,6 @@
 {
   "name": "react-semantic-images",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Drop <SemanticImage description=\"...\"> into your React app. Run two commands. Get the best-matching image from your pool assigned to every slot — locally, no API keys.",
   "keywords": [
     "react",
@@ -55,8 +55,8 @@
     "fast-glob": "^3.3.2"
   },
   "optionalDependencies": {
-    "sharp": "^0.34.0",
-    "playwright": "^1.40.0"
+    "playwright": "^1.40.0",
+    "sharp": "^0.34.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

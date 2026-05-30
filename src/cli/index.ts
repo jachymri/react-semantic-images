@@ -168,6 +168,68 @@ async function main(): Promise<void> {
   console.log(`\n✅  Matched ${assignments.length} description(s) → ${path.relative(cwd, outFile)}\n`);
   for (const a of assignments)
     console.log(`  ${a.score.toFixed(3)}  "${a.description}" → ${a.image.publicPath}`);
+
+  // ── 6. Update .gitignore ──────────────────────────────────────────────────
+  await updateGitignore(manifest, poolDir, publicDir, cwd);
+}
+
+async function isGitRepo(startDir: string): Promise<boolean> {
+  let dir = startDir;
+  while (true) {
+    try {
+      await fs.stat(path.join(dir, ".git"));
+      return true;
+    } catch {
+      const parent = path.dirname(dir);
+      if (parent === dir) return false;
+      dir = parent;
+    }
+  }
+}
+
+async function updateGitignore(
+  manifest: Record<string, unknown>,
+  poolDir: string,
+  publicDir: string,
+  cwd: string,
+): Promise<void> {
+  if (!(await isGitRepo(cwd))) {
+    return; // not a git repo — skip
+  }
+
+  const gitignorePath = path.join(cwd, ".gitignore");
+  const poolRel = path.relative(cwd, poolDir).split(path.sep).join("/");
+  const publicRel = path.relative(cwd, publicDir).split(path.sep).join("/");
+
+  // All matched image paths from the full manifest (not just this run).
+  const matched = Object.values(manifest)
+    .filter((v): v is string | { image: string } => v !== null)
+    .map((v) => {
+      const pub = typeof v === "string" ? v : v.image;
+      // pub is a web path like /semantic-pool/img.jpg — prepend publicDir
+      return `${publicRel}/${pub.replace(/^\//, "")}`;
+    });
+
+  const lines = [
+    `# react-semantic-images: ignore unmatched pool images`,
+    `${poolRel}/*`,
+    ...matched.map((p) => `!${p}`),
+  ];
+  const block =
+    `# --- react-semantic-images ---\n` +
+    lines.join("\n") + "\n" +
+    `# --- end react-semantic-images ---`;
+
+  let existing = "";
+  try { existing = await fs.readFile(gitignorePath, "utf8"); } catch { /* create */ }
+
+  const marker = /# --- react-semantic-images ---[\s\S]*?# --- end react-semantic-images ---/;
+  const updated = marker.test(existing)
+    ? existing.replace(marker, block)
+    : existing.trimEnd() + (existing ? "\n\n" : "") + block + "\n";
+
+  await fs.writeFile(gitignorePath, updated);
+  console.log(`\n📝 .gitignore updated — ${matched.length} matched image(s) kept, rest ignored.`);
 }
 
 main().catch((err) => {
